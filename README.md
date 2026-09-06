@@ -1,13 +1,15 @@
 # MaskFill — Free, Privacy-Focused Fake Data Form Filler for Chrome
 
-**MaskFill** is a 100% free and unlimited Chrome extension that fills any online form with realistic test data in one click. It works 100% locally in your browser — **zero network requests, zero tracking, zero analytics**. No sign-ups, no paywalls, no API keys, no remote code.
+**MaskFill** is a 100% free and unlimited Chrome extension that fills any online form with realistic, never-repeating test data in one click. It works 100% locally in your browser — **zero network requests, zero tracking, zero analytics**. No sign-ups, no paywalls, no API keys, no remote code.
 
 ## Why use MaskFill?
 
 - **One-click form filling** — click the toolbar icon, use the right-click menu, or press `Ctrl+Shift+F` to fill an entire form instantly
+- **Never-repeating data** — every click generates a fresh, realistic profile; the same email or name never comes back twice
 - **Privacy-first** — MaskFill never sends your data anywhere. All generated information stays inside your browser
 - **Free forever** — no premium tiers, no usage limits, no trials
 - **Realistic data** — names, emails, phones, addresses, dates, and more, generated in the correct format for each field
+- **66 languages** — English, Hindi (Devanagari names), Spanish, French, German, Japanese, Arabic, and 50+ more
 
 ## Working Features
 

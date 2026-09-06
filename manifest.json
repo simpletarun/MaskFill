@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "MaskFill - Fake Data Form Filler",
   "version": "1.0.1",
-  "description": "Privacy-focused form filler. Fills all inputs on a page with realistic fake data. 100% local, zero network requests, no tracking.",
+  "description": "Fill any form with realistic fake data. Never-repeating profiles. 66 languages. 100% free. 100% local, zero network, no tracking.",
   "permissions": ["storage", "contextMenus", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
