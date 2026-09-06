@@ -177,7 +177,7 @@
         var isPwd = (el.type === 'password') || signalsContain(sig, /password|pwd/i);
         if (isPwd && !settings.fillPasswords) { skipped++; continue; }
 
-        if (settings.fillOnlyEmpty && FieldDetector.hasValue(el)) { skipped++; continue; }
+        if (!opts.force && settings.fillOnlyEmpty && FieldDetector.hasValue(el)) { skipped++; continue; }
 
         var type = FieldDetector.detectType(el, settings.matchBy) || null;
 
@@ -240,12 +240,16 @@
         if ((type === 'mobile' || type === 'phone') && /^[0-5]\d{9}$/.test(String(value || ''))) {
           value = String(6 + Math.floor(Math.random() * 4)) + String(value).substring(1);
         }
-        // field still shows a lone country-code prefix like "+91" → keep the prefix, add the number
+        // keep a country-code prefix the field already has (e.g. "+91 " or a lone "+91") and refill the number
         if ((type === 'mobile' || type === 'phone') && typeof value === 'string') {
-          const ccMatch = String(el.value || '').trim().match(/^(\+[0-9]{1,3})[-\s.]*$/);
+          const prev = String(el.value || '').trim();
+          const pure = prev.match(/^(\+[0-9]{1,3})[-\s.]*$/);
+          const withNum = prev.match(/^(\+[0-9]{1,3})[-\s. ]+\d/);
+          const ccMatch = pure || withNum;
           if (ccMatch) {
             const fits = (sig && sig.maxlength > 0) ? sig.maxlength : Infinity;
-            if (fits >= 13) value = ccMatch[1] + ' ' + value;
+            const combined = ccMatch[1] + ' ' + value;
+            if (fits >= combined.length) value = combined;
           }
         }
 
@@ -281,7 +285,7 @@
     }
     if (msg.type === 'UNDO') { sendResponse(undoLastFill()); return false; }
     if (msg.type === 'FILL') {
-      fillOrchestrate(msg.scope || 'all').then(function (res) {
+      fillOrchestrate(msg.scope || 'all', { force: !!msg.force }).then(function (res) {
         sendResponse(res);
       }, function (err) {
         sendResponse({ ok: false, err: String(err && err.message || err) });

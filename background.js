@@ -41,7 +41,8 @@ ensureMenus();
 
 function sendFill(tabId, scope) {
   return new Promise((resolve) => {
-    chrome.tabs.sendMessage(tabId, { type: 'FILL', scope }, (resp) => {
+    // force=1 → repeated clicks regenerate fresh data and overwrite (Fake Filler style)
+    chrome.tabs.sendMessage(tabId, { type: 'FILL', scope, force: 1 }, (resp) => {
       if (chrome.runtime.lastError) return resolve({ err: chrome.runtime.lastError.message });
       resolve(resp || { err: 'no response' });
     });

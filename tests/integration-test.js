@@ -268,5 +268,47 @@ const selText = fakeEl({ tagName: 'SELECT', type: 'select-one', options: [{ disa
 F.fill(selText, { type: 'select', value: 'Engineer' });
 eq('select matched by text', selText.value === 'eng');
 
+// ---- every locale generates real, non-empty data for the core type set ----
+(function () {
+  const optsJs2 = fs.readFileSync(path.join(root, 'options/options.js'), 'utf8');
+  const m2 = optsJs2.match(/var LOCALES = (\[[\s\S]*?\n  \]);/);
+  if (!m2) { eq('locale sweep parseable', false); return; }
+  let locs;
+  try { locs = new Function('return ' + m2[1])(); } catch (e) {}
+  if (!locs) { eq('locale sweep parseable', false); return; }
+  const types2 = ['firstName', 'lastName', 'fullName', 'email', 'username', 'phone', 'mobile', 'city', 'streetAddress', 'state', 'zip', 'country', 'company', 'jobTitle', 'bio', 'timezone', 'gender', 'date', 'number', 'text'];
+  const broken = [];
+  locs.forEach(function (pair) {
+    R.setLocale(pair[0]);
+    types2.forEach(function (t) {
+      R.beginFill();
+      let v;
+      try { v = String(R.generate(t, {})); } catch (e) { v = ''; }
+      if (!v || v === 'undefined') broken.push(pair[0] + ':' + t);
+    });
+  });
+  R.setLocale('en');
+  eq('all ' + locs.length + ' locales generate real data', broken.length === 0);
+  if (broken.length) console.log('  locale gaps:', broken.slice(0, 20).join(', '));
+})();
+
+// ---- repeat fills never echo the same identity; random text fields don't repeat ----
+(function () {
+  R.setConsistent(true);
+  const emails = [], names = [];
+  for (let i = 0; i < 25; i++) {
+    R.beginFill();
+    emails.push(String(R.generate('email', {})));
+    names.push(String(R.generate('firstName', {})));
+  }
+  const uniq = (a) => new Set(a).size;
+  eq('25 consecutive fills give 25 unique emails', uniq(emails) === 25);
+  eq('25 consecutive fills give 25 unique first names', uniq(names) === 25);
+  const jobs = new Set();
+  for (let i = 0; i < 15; i++) jobs.add(String(R.generate('jobTitle', {})));
+  eq('job titles do not repeat within a session', jobs.size === 15);
+  R.setConsistent(false);
+})();
+
 console.log(`\nINTEGRATION: ${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

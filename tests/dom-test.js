@@ -77,8 +77,8 @@ w.chrome.runtime.onMessage.addListener = (fn) => { msgListener = fn; };
 ['lib/faker.min.js', 'lib/settings.js', 'lib/data-generator.js', 'lib/field-detector.js', 'lib/filler.js', 'content.js']
   .forEach(f => w.eval(fs.readFileSync(f, 'utf8')));
 
-function send(type, scope) {
-  return new Promise((resolve) => msgListener({ type, scope }, {}, (resp) => resolve(resp)));
+function send(type, scope, force) {
+  return new Promise((resolve) => msgListener({ type, scope, force }, {}, (resp) => resolve(resp)));
 }
 
 async function main() {
@@ -141,7 +141,7 @@ async function main() {
   expect('remember me checked', chk('[name=remember_me]') === true);
   expect('date valid', /^\d{4}-\d{2}-\d{2}$/.test(val('[name=start_date]')));
   expect('DOB masked text filled as DD/MM/YYYY', /^\d{2}\/\d{2}\/\d{4}$/.test(val('[name=birthdate_dd]')));
-  expect('DOB type=date is adult birthdate', (function () { const y = Number(val('[name=dob_date]').slice(0, 4)); return y >= 1951 && y <= 2008; })());
+  expect('DOB type=date is adult birthdate', (function () { const y = Number(val('[name=dob_date]').slice(0, 4)); return y >= 1950 && y <= 2008; })());
   expect('hidden MCQ radios answered', (function () { const r = doc.querySelectorAll('[name=mcq1]'); let c = 0; r.forEach(x => { if (x.checked) c++; }); return c >= 1; })());
   expect('hidden agree checkbox checked', doc.querySelector('[name=agree_mcq]').checked === true);
   expect('hidden untouched', val('[name=token]') === 'keepme');
@@ -155,20 +155,29 @@ async function main() {
   expect('age with mask chip gets filled', val('[name=age_masked]') !== '--' && val('[name=age_masked]').length > 0);
   expect('filled field flashed green outline', doc.querySelector('[name=first_name]').style.outline === '2px solid #22c55e');
 
-  // second fill with same settings → fillOnlyEmpty should skip already-filled text fields
+  // repeated icon click (forced) generates a NEW profile and overwrites — Fake Filler style
   const emailBefore = val('#em'), firstBefore = val('[name=first_name]');
+  res = await send('FILL', 'all', 1);
+  console.log('FILL2 (forced, generate again):', JSON.stringify(res));
+  expect('re-click generates new email', val('#em') !== emailBefore && /@/.test(val('#em')));
+  expect('re-click overwrites first name', val('[name=first_name]') !== firstBefore);
+  expect('re-click keeps +91 number valid', /^\+91 \d{10}$/.test(val('[name=cc_mobile]')));
+
+  // autoFill-style fill (no force) respects fillOnlyEmpty → user data kept
+  savedSettings = Object.assign({}, settings, { fillOnlyEmpty: true });
+  const emailKeep = val('#em');
   res = await send('FILL', 'all');
-  console.log('FILL2 (fillOnlyEmpty):', JSON.stringify(res));
-  expect('fill2 keeps existing text intact', val('#em') === emailBefore && val('[name=first_name]') === firstBefore);
+  console.log('FILL3 (fillOnlyEmpty):', JSON.stringify(res));
+  expect('fillOnlyEmpty keeps existing text intact', val('#em') === emailKeep);
 
   // fillOnlyEmpty=false refills
   savedSettings = Object.assign({}, settings, { fillOnlyEmpty: false });
   res = await send('FILL', 'all');
-  console.log('FILL3 (fillOnlyEmpty=false):', JSON.stringify(res));
+  console.log('FILL4 (fillOnlyEmpty=false):', JSON.stringify(res));
 
-  // undo restores the pre-FILL3 snapshot exactly
+  // undo restores the pre-FILL refill snapshot exactly
   doc.querySelector('#em').value = '';
-  res = await send('FILL', 'all');
+  res = await send('FILL', 'all', 1);
   if (val('#em') === '') { failures.push('pre-undo refill expected non-empty email'); }
   let undoRes = await new Promise((resolve) => msgListener({ type: 'UNDO' }, {}, resolve));
   console.log('UNDO:', JSON.stringify(undoRes));

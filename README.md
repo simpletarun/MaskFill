@@ -13,6 +13,7 @@
 
 ### Instant Form Filling
 - Fill an entire form with one click from the toolbar or context menu
+- **Generate fresh data on every click** — click the toolbar icon again and again; each click fills the form with a brand-new profile that never repeats the last one, like Fake Filler
 - Fill a single field with the right-click → **Fill this field** option
 - **Undo** any fill with `Alt+Shift+U` (`Command+Shift+U` on Mac) or the context menu
 - `Ctrl+Shift+F` (`Command+Shift+F` on Mac) fills the page instantly
@@ -40,7 +41,7 @@ MaskFill recognizes and correctly fills:
 - Works on **contenteditable** areas and fields inside **shadow DOM**
 
 ### Full Control
-- **Fill only empty fields** mode — leave already-typed data untouched
+- **Fill only empty fields** mode — applied to automatic page-load filling only, so your already-typed data is never touched (clicking the toolbar icon always regenerates and overwrites)
 - **Fill passwords** toggle — choose whether password fields are filled
 - **Custom password value** — use your own test password
 - **Max length** — cap generated values to fit your forms
