@@ -1,0 +1,19 @@
+{
+  "name": "maskfill",
+  "version": "1.0.0",
+  "description": "MaskFill - privacy-focused fake data form filler Chrome extension. 100% local, zero network requests.",
+  "scripts": {
+    "test": "node tests/menu-test.js && node tests/integration-test.js && node tests/options-test.js && node tests/dom-test.js",
+    "bundle:faker": "esbuild scripts/bundle-entry.js --bundle --format=iife --minify --outfile=lib/faker.min.js",
+    "icons": "powershell -ExecutionPolicy Bypass -File scripts/gen-icons.ps1"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@faker-js/faker": "8.4.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.0.1"
+  }
+}

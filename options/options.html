@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaskFill — Settings</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>MaskFill settings</h1>
+    <p class="subtitle">All data is generated locally. Nothing leaves your browser.</p>
+  </header>
+
+  <fieldset>
+    <legend>General</legend>
+    <label class="field">
+      <span>Locale</span>
+      <select id="locale"></select>
+    </label>
+    <label class="check"><input type="checkbox" id="fillOnlyEmpty"> Fill only empty fields</label>
+    <label class="check"><input type="checkbox" id="opt-autofill"> Auto-fill on page load</label>
+    <p class="hint">Fills detected forms automatically when a page loads or navigates (SPA).</p>
+    <label class="check"><input type="checkbox" id="fillPasswords"> Fill password fields</label>
+    <label class="field">
+      <span>Fixed password <small>(blank = random)</small></span>
+      <input type="text" id="passwordValue" placeholder="Pa$$w0rd! or leave blank">
+    </label>
+    <label class="check"><input type="checkbox" id="autoCheckTerms"> Auto-check terms / consent boxes</label>
+    <label class="check"><input type="checkbox" id="profileConsistent"> Reuse one consistent profile per page</label>
+    <label class="check"><input type="checkbox" id="flashFilled"> Briefly highlight filled fields</label>
+    <label class="field">
+      <span>Max length <small>(cap for plain dummy text)</small></span>
+      <input type="number" id="maxLength" min="1" max="200" value="40">
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Field detection</legend>
+    <p class="hint">Sources used to recognize what each field means.</p>
+    <label class="check"><input type="checkbox" id="match-name"> Name attr</label>
+    <label class="check"><input type="checkbox" id="match-id"> ID attr</label>
+    <label class="check"><input type="checkbox" id="match-className"> CSS classes</label>
+    <label class="check"><input type="checkbox" id="match-placeholder"> Placeholder</label>
+    <label class="check"><input type="checkbox" id="match-label"> Label / aria</label>
+    <label class="check"><input type="checkbox" id="match-ariaLabel"> aria-label</label>
+    <label class="check"><input type="checkbox" id="match-ariaLabelledby"> aria-labelledby</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ignore rules</legend>
+    <p class="hint">Fields whose name, id or class contains any of these are skipped (protects CAPTCHAs).</p>
+    <div class="chip-editor">
+      <div id="chips" class="chips"></div>
+      <div class="chip-input-row">
+        <input type="text" id="chipInput" placeholder="Add pattern…">
+        <button id="chipAdd" type="button">Add</button>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:14px">Never fill forms on these hostnames (one regex per line).</p>
+    <textarea id="ignoredDomains" rows="3" placeholder="bankofamerica&#10;\.gov$&#10;intranet\."></textarea>
+  </fieldset>
+
+</main>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script src="../lib/settings.js" defer></script>
+<script src="options.js" defer></script>
+</body>
+</html>
