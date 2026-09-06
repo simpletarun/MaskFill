@@ -25,7 +25,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid #6366f1;border-color:#
 .chip-input-row button:hover{background:#4f46e5}
 .toast{position:fixed;bottom:20px;right:20px;background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:6px;font-size:.85rem;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;z-index:999}
 .toast.show{opacity:1;transform:translateY(0)}
-.toast.error{background:#dc2626}
 @media(prefers-color-scheme:dark){
   body{background:#0f1117;color:#e2e4e9}
   fieldset{background:#1a1d27;border-color:#2d3148}

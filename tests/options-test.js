@@ -16,7 +16,7 @@ globalThis.window = w;
 let savedSettings = { locale: 'en', matchBy: { name: true, id: true, className: false, placeholder: true, label: true, ariaLabel: true, ariaLabelledby: true }, ignorePatterns: ['captcha'] };
 w.chrome = {
   runtime: { lastError: null },
-  storage: { sync: {
+  storage: { local: {
     get(obj, cb) { cb({ settings: savedSettings }); },
     set(obj, cb) { savedSettings = JSON.parse(JSON.stringify(obj.settings)); if (cb) cb(); }
   } }
@@ -35,7 +35,7 @@ function change(el, val) { el.value = val; el.dispatchEvent(new w.Event('change'
   await wait(50);
 
   const $id = (id) => w.document.getElementById(id);
-  eq('locale select has 66 options', $id('locale').options.length === 66);
+  eq('locale select has 67 options', $id('locale').options.length === 67);
   eq('locale en selected', $id('locale').value === 'en');
 
   // maxLength clamp
@@ -51,6 +51,9 @@ function change(el, val) { el.value = val; el.dispatchEvent(new w.Event('change'
   eq('flashFilled persists', savedSettings.flashFilled === false);
   $id('profileConsistent').click(); await wait(400);
   eq('profileConsistent persists', savedSettings.profileConsistent === false);
+  eq('checkAllBoxes defaults on', $id('checkAllBoxes').checked === true);
+  $id('checkAllBoxes').click(); await wait(400);
+  eq('checkAllBoxes persists', savedSettings.checkAllBoxes === false);
 
   // chips add
   $id('chipInput').value = 'honeypot';
@@ -58,6 +61,13 @@ function change(el, val) { el.value = val; el.dispatchEvent(new w.Event('change'
   eq('chip rendered', $id('chips').textContent.indexOf('honeypot') !== -1);
   await wait(400);
   eq('chip persisted', savedSettings.ignorePatterns.indexOf('honeypot') !== -1);
+
+  // per-site skip rules: textarea round-trips to a saved array
+  eq('siteRules textarea renders empty default', $id('siteRules').value === '');
+  change($id('siteRules'), 'bankofamerica.com | [name=userid]\npaypal.com | promo');
+  await wait(400);
+  eq('siteRules saved as array', Array.isArray(savedSettings.siteRules) && savedSettings.siteRules.length === 2 &&
+    savedSettings.siteRules[0] === 'bankofamerica.com | [name=userid]');
 
   // responsive CSS media queries present
   const css = fs.readFileSync(path.join(root, 'options/options.css'), 'utf8');

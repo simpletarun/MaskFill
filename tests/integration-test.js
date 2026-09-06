@@ -73,6 +73,8 @@ eq('ignore readonly', D.isIgnorable(fakeEl({ readonly: true }), settings.ignoreP
 eq('ignore captcha', D.isIgnorable(fakeEl({ name: 'g-recaptcha-response' }), settings.ignorePatterns) === true);
 eq('ignore file', D.isIgnorable(fakeEl({ type: 'file' }), settings.ignorePatterns) === true);
 eq('not ignore text', D.isIgnorable(fakeEl({ name: 'email' }), settings.ignorePatterns) === false);
+eq('hiddenOk keeps plain fake visible-like', D.isIgnorable(fakeEl({ type: 'text', name: 'x' }), settings.ignorePatterns, true) === false);
+eq('hiddenOk still ignores recaptcha', D.isIgnorable(fakeEl({ type: 'text', name: 'g-recaptcha-response' }), settings.ignorePatterns, true) === true);
 
 // ---- generator ----
 eq('gen email', /@/.test(R.generate('email', {})) || typeof R.generate('email', {}) === 'string');
@@ -115,6 +117,15 @@ eq('hi: email is name@safe-domain, no mangle', /^[a-z0-9._]+@(gmail|yahoo|outloo
 eq('hi: username is latin letters', /^[a-z]+$/.test(hiUser));
 R.setLocale('en'); R.beginFill();
 eq('hi: en restored gives latin names', !/[\u0900-\u097F]/.test(R.generate('fullName', {})) && R.generate('fullName', {}).length > 1);
+
+// ---- english+hindi mixed locale ----
+R.setLocale('en_hi'); R.beginFill();
+const mixNames = [];
+for (let m = 0; m < 20; m++) { R.beginFill(); mixNames.push(String(R.generate('firstName', {}))); }
+eq('en_hi: mixes devanagari and latin names', mixNames.some(x => /[\u0900-\u097F]/.test(x)) && mixNames.some(x => /^[A-Za-z]/.test(x)));
+R.setLocale('en_hi'); R.beginFill();
+eq('en_hi: email always ascii', /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(String(R.generate('email', {}))));
+R.setLocale('en'); R.beginFill();
 
 // ---- every unicode locale produces a clean email ----
 ['fr', 'de', 'es', 'pt_BR', 'it', 'nl', 'ja', 'ar', 'ru', 'th', 'he', 'ko', 'hi'].forEach(function (lc) {
@@ -214,7 +225,7 @@ eq('persona email derives from name', p1.email.toLowerCase().includes(p1.firstNa
   try { entries = new Function('return ' + m[1])(); } catch (e) { entries = null; }
   if (!entries) { eq('options LOCALES parseable', false); return; }
   const keys = Object.keys(window.__FAKERS__ || {});
-  const CUSTOM = { hi: true }; // bundled in data-generator, not in faker
+  const CUSTOM = { hi: true, en_hi: true }; // bundled in data-generator, not in faker
   const missing = entries.filter(function (pair) { return !CUSTOM[pair[0]] && keys.indexOf(pair[0]) === -1; }).map(function (p) { return p[0]; });
   eq('every options locale exists in faker bundle (missing: ' + missing.join(',') + ')', missing.length === 0);
 })();
@@ -268,6 +279,28 @@ const selText = fakeEl({ tagName: 'SELECT', type: 'select-one', options: [{ disa
 F.fill(selText, { type: 'select', value: 'Engineer' });
 eq('select matched by text', selText.value === 'eng');
 
+// ---- React value tracker sync ----
+const trackedEl = fakeEl({ value: '' });
+trackedEl._valueTracker = { value: null, setValue: function (v) { this.value = v; } };
+F.setNativeValue(trackedEl, 'abc');
+eq('tracked element value set', trackedEl.value === 'abc');
+eq('tracker synced to written value', trackedEl._valueTracker.value === 'abc');
+
+const plainEl = fakeEl({ value: '' });
+F.setNativeValue(plainEl, 'abc');
+eq('no-tracker element still filled', plainEl.value === 'abc');
+
+// ---- check-all-boxes mode ----
+const scopeBox = fakeEl({ type: 'checkbox', name: 'repo_status', checked: false });
+F.fillCheckbox(scopeBox, G.normalize({ checkAllBoxes: true }));
+eq('checkAllBoxes checks non-terms box', scopeBox.checked === true);
+const termBox = fakeEl({ type: 'checkbox', name: 'agree_terms', checked: false });
+F.fillCheckbox(termBox, G.normalize({ checkAllBoxes: false }));
+eq('without checkAllBoxes terms still checked', termBox.checked === true);
+const randomBox = fakeEl({ type: 'checkbox', name: 'notifications', checked: false });
+F.fillCheckbox(randomBox, G.normalize({ checkAllBoxes: false }));
+eq('without checkAllBoxes non-terms not forced checked', randomBox.checked === false);
+
 // ---- every locale generates real, non-empty data for the core type set ----
 (function () {
   const optsJs2 = fs.readFileSync(path.join(root, 'options/options.js'), 'utf8');
@@ -299,15 +332,41 @@ eq('select matched by text', selText.value === 'eng');
   for (let i = 0; i < 25; i++) {
     R.beginFill();
     emails.push(String(R.generate('email', {})));
-    names.push(String(R.generate('firstName', {})));
+    // personas are deduped on the full identity (email|first|last|username), so a
+    // standalone first name MAY legitimately repeat; the full name must not.
+    names.push(String(R.generate('firstName', {})) + ' ' + String(R.generate('lastName', {})));
   }
   const uniq = (a) => new Set(a).size;
   eq('25 consecutive fills give 25 unique emails', uniq(emails) === 25);
-  eq('25 consecutive fills give 25 unique first names', uniq(names) === 25);
+  eq('25 consecutive fills give 25 unique full names', uniq(names) === 25);
   const jobs = new Set();
   for (let i = 0; i < 15; i++) jobs.add(String(R.generate('jobTitle', {})));
   eq('job titles do not repeat within a session', jobs.size === 15);
   R.setConsistent(false);
+})();
+
+// ---- per-site skip rules: hostname + field matching ----
+(function () {
+  eq('hostMatches exact domain', D.hostMatches('bank.com', 'bank.com') === true);
+  eq('hostMatches subdomain', D.hostMatches('login.bank.com', 'bank.com') === true);
+  eq('hostMatches strips www', D.hostMatches('www.bank.com', 'bank.com') === true);
+  eq('hostMatches no false match on lookalike', D.hostMatches('bankofevil.com', 'bank.com') === false);
+  eq('hostMatches strips port', D.hostMatches('bank.com', 'bank.com:8443') === true);
+  const selEl = fakeEl({ name: 'userid', matches: (s) => s === '[name=userid]' });
+  eq('site rule matches CSS selector', D.siteRuleMatches(selEl, 'bank.com | [name=userid]', 'bank.com') === true);
+  eq('site rule ignores wrong domain', D.siteRuleMatches(selEl, 'other.com | [name=userid]', 'bank.com') === false);
+  const txtEl = fakeEl({ name: 'promo_hint', placeholder: '' });
+  eq('site rule matches by text', D.siteRuleMatches(txtEl, 'bank.com | promo', 'bank.com') === true);
+  eq('site rule text match is host-scoped', D.siteRuleMatches(txtEl, 'bank.com | promo', 'example.com') === false);
+  eq('site rule rejects non-rule input', D.siteRuleMatches(txtEl, 'nopipe', 'bank.com') === false);
+})();
+
+// ---- settings merge must not be prototype-pollutable (stored values are attacker-adjacent) ----
+(function () {
+  const o = G.normalize(JSON.parse('{"__proto__":{"polluted":true},"constructor":{"polluted":true}}'));
+  eq('deepMerge drops __proto__/constructor keys', Object.prototype.polluted === undefined &&
+    o.polluted === undefined && Object.getPrototypeOf(o) === Object.prototype);
+  eq('deepMerge merge still adds normal keys', G.normalize({ locale: 'hi' }).locale === 'hi');
 })();
 
 console.log(`\nINTEGRATION: ${passed} passed, ${failed} failed`);

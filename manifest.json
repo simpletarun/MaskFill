@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "MaskFill - Fake Data Form Filler",
-  "version": "1.0.1",
-  "description": "Fill any form with realistic fake data. Never-repeating profiles. 66 languages. 100% free. 100% local, zero network, no tracking.",
+  "version": "1.1.0",
+  "description": "Fill any form with realistic fake data. Never-repeating profiles. 67 languages. 100% free. 100% local, zero network, no tracking.",
   "permissions": ["storage", "contextMenus", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -28,11 +28,6 @@
       "all_frames": true,
       "run_at": "document_idle",
       "js": [
-        "lib/faker.min.js",
-        "lib/settings.js",
-        "lib/data-generator.js",
-        "lib/field-detector.js",
-        "lib/filler.js",
         "content.js"
       ]
     }

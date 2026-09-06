@@ -28,6 +28,10 @@
       <input type="text" id="passwordValue" placeholder="Pa$$w0rd! or leave blank">
     </label>
     <label class="check"><input type="checkbox" id="autoCheckTerms"> Auto-check terms / consent boxes</label>
+    <label class="check"><input type="checkbox" id="checkAllBoxes"> Check all boxes (on by default)</label>
+    <p class="hint">Checks every checkbox on the page — scopes, permissions, subscribe, terms, everything.</p>
+    <label class="check"><input type="checkbox" id="fillHiddenFields"> Fill fields in closed popups / modals</label>
+    <p class="hint">Fills inputs inside collapsed dialogs, tabs and drawers even while hidden.</p>
     <label class="check"><input type="checkbox" id="profileConsistent"> Reuse one consistent profile per page</label>
     <label class="check"><input type="checkbox" id="flashFilled"> Briefly highlight filled fields</label>
     <label class="field">
@@ -60,6 +64,8 @@
     </div>
     <p class="hint" style="margin-top:14px">Never fill forms on these hostnames (one regex per line).</p>
     <textarea id="ignoredDomains" rows="3" placeholder="bankofamerica&#10;\.gov$&#10;intranet\."></textarea>
+    <p class="hint" style="margin-top:14px">Skip specific fields on specific sites. One rule per line: <code>domain | &lt;selector-or-text&gt;</code> — start with <code>#</code>, <code>.</code> or <code>[</code> for a CSS selector, otherwise the text is matched against the field's name, id, class, placeholder or label. Applies to the domain and its subdomains.</p>
+    <textarea id="siteRules" rows="4" placeholder="bankofamerica.com | [name=userid]&#10;paypal.com | [name=address2]&#10;hotels.com | promo&#10;example.com | newsletter"></textarea>
   </fieldset>
 
 </main>

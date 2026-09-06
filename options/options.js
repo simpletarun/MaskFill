@@ -14,7 +14,7 @@
     ['fr', 'French'], ['fr_BE', 'French (Belgium)'], ['fr_CA', 'French (Canada)'],
     ['fr_CH', 'French (Switzerland)'], ['fr_LU', 'French (Luxembourg)'], ['fr_SN', 'French (Senegal)'],
     ['de', 'German'], ['de_AT', 'German (Austria)'], ['de_CH', 'German (Switzerland)'],
-    ['el', 'Greek'], ['he', 'Hebrew'], ['hi', 'Hindi'], ['hu', 'Hungarian'],
+    ['el', 'Greek'], ['he', 'Hebrew'], ['hi', 'Hindi'], ['en_hi', 'English + Hindi'], ['hu', 'Hungarian'],
     ['hy', 'Armenian'], ['id_ID', 'Indonesian'], ['it', 'Italian'],
     ['ja', 'Japanese'], ['ka_GE', 'Georgian'], ['ko', 'Korean'],
     ['lv', 'Latvian'], ['mk', 'Macedonian'], ['ne', 'Nepali'],
@@ -37,10 +37,10 @@
     }, 300);
   }
 
-  function toast(msg, isError) {
+  function toast(msg) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'toast show' + (isError ? ' error' : '');
+    el.className = 'toast show';
     clearTimeout(el._t);
     el._t = setTimeout(function () { el.className = 'toast'; }, 2000);
   }
@@ -49,7 +49,6 @@
     var e = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
       if (k === 'text') e.textContent = attrs[k];
-      else if (k === 'html') e.innerHTML = attrs[k];
       else if (k === 'checked') e.checked = !!attrs[k];
       else if (k === 'className') e.className = attrs[k];
       else e.setAttribute(k, attrs[k]);
@@ -92,10 +91,13 @@
     document.getElementById('fillPasswords').checked = settings.fillPasswords;
     document.getElementById('passwordValue').value = settings.passwordValue;
     document.getElementById('autoCheckTerms').checked = settings.autoCheckTerms;
+    document.getElementById('checkAllBoxes').checked = !!settings.checkAllBoxes;
+    document.getElementById('fillHiddenFields').checked = !!settings.fillHiddenFields;
     document.getElementById('profileConsistent').checked = settings.profileConsistent;
     document.getElementById('flashFilled').checked = settings.flashFilled;
     document.getElementById('maxLength').value = settings.maxLength;
     document.getElementById('ignoredDomains').value = (settings.ignoredDomains || []).join('\n');
+    document.getElementById('siteRules').value = (settings.siteRules || []).join('\n');
     ['name', 'id', 'className', 'placeholder', 'label', 'ariaLabel', 'ariaLabelledby'].forEach(function (k) {
       document.getElementById('match-' + k).checked = settings.matchBy[k];
     });
@@ -123,6 +125,12 @@
         save();
       });
 
+      document.getElementById('siteRules').addEventListener('change', function () {
+        settings.siteRules = this.value.split(/\r?\n/).map(function (s) { return s.trim(); })
+          .filter(function (s) { return s.indexOf('|') !== -1; });
+        save();
+      });
+
       document.getElementById('fillOnlyEmpty').addEventListener('change', function () {
         settings.fillOnlyEmpty = this.checked; save();
       });
@@ -137,6 +145,12 @@
       });
       document.getElementById('autoCheckTerms').addEventListener('change', function () {
         settings.autoCheckTerms = this.checked; save();
+      });
+      document.getElementById('checkAllBoxes').addEventListener('change', function () {
+        settings.checkAllBoxes = this.checked; save();
+      });
+      document.getElementById('fillHiddenFields').addEventListener('change', function () {
+        settings.fillHiddenFields = this.checked; save();
       });
       document.getElementById('profileConsistent').addEventListener('change', function () {
         settings.profileConsistent = this.checked; save();

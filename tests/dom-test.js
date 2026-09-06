@@ -38,6 +38,8 @@ const formHTML = `
   <input name="disabled_field" disabled>
   <input name="readonly_field" readonly value="ro">
   <input name="g-recaptcha-response">
+  <input name="loyalty_no">
+  <input name="promo_hint">
   <input type="color" name="fav_color">
   <input type="number" name="quantity" min="1" max="10">
   <input type="number" name="age" value="0">
@@ -46,9 +48,10 @@ const formHTML = `
 
 const settings = {
   locale: 'en', fillOnlyEmpty: true, fillPasswords: true, passwordValue: '',
-  autoCheckTerms: true,
+  autoCheckTerms: true, checkAllBoxes: true,
   matchBy: { name: true, id: true, className: false, placeholder: true, label: true, ariaLabel: true },
-  ignorePatterns: ['captcha', 'g-recaptcha', 'h-captcha', 'recaptcha']
+  ignorePatterns: ['captcha', 'g-recaptcha', 'h-captcha', 'recaptcha'],
+  siteRules: ['example.com | [name=loyalty_no]', 'example.com | promo']
 };
 
 const dom = new JSDOM(formHTML, { url: 'https://example.com/form', runScripts: 'dangerously' });
@@ -63,7 +66,7 @@ w.chrome = {
     lastError: null
   },
   storage: {
-    sync: {
+    local: {
       get(keys, cb) { cb({ settings: savedSettings }); },
       set(obj, cb) { savedSettings = obj.settings; if (cb) cb(); }
     }
@@ -92,6 +95,26 @@ async function main() {
     host.attachShadow({ mode: 'open' }).appendChild(shadowInput);
     w.document.body.appendChild(host);
   } catch (e) { host = null; }
+
+  // scroll-style birthday picker: three day/month/year selects (scrollable web UI)
+  (function appendBdayPicker() {
+    const mk = (name, opts) => {
+      const s = w.document.createElement('select');
+      s.setAttribute('name', name);
+      opts.forEach(o => { const op = w.document.createElement('option'); op.value = o.v; op.textContent = o.t; s.appendChild(op); });
+      w.document.querySelector('#f').appendChild(s);
+    };
+    const days = [{ v: '', t: 'Day' }];
+    for (let i = 1; i <= 31; i++) days.push({ v: String(i), t: String(i) });
+    const months = [{ v: '', t: 'Month' }];
+    ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      .forEach((mn, i) => months.push({ v: String(i + 1), t: mn }));
+    const years = [{ v: '', t: 'Year' }];
+    for (let y = 1940; y <= 2015; y++) years.push({ v: String(y), t: String(y) });
+    mk('dob_day', days);
+    mk('dob_month', months);
+    mk('dob_year', years);
+  })();
 
   let res = await send('PING');
   console.log('PING:', JSON.stringify(res));
@@ -139,15 +162,27 @@ async function main() {
   expect('radio checked', chk('input[type=radio][value=M]') || chk('input[type=radio][value=F]'));
   expect('terms box checked', chk('[name=agree_terms]') === true);
   expect('remember me checked', chk('[name=remember_me]') === true);
+  expect('non-terms checkbox checked with checkAllBoxes', chk('[name=newsletter]') === true);
   expect('date valid', /^\d{4}-\d{2}-\d{2}$/.test(val('[name=start_date]')));
   expect('DOB masked text filled as DD/MM/YYYY', /^\d{2}\/\d{2}\/\d{4}$/.test(val('[name=birthdate_dd]')));
   expect('DOB type=date is adult birthdate', (function () { const y = Number(val('[name=dob_date]').slice(0, 4)); return y >= 1950 && y <= 2008; })());
+  const bdv = Number(val('[name=dob_day]')), bmv = Number(val('[name=dob_month]')), byv = Number(val('[name=dob_year]'));
+  expect('bday day select filled', bdv >= 1 && bdv <= 31);
+  expect('bday month select filled', bmv >= 1 && bmv <= 12);
+  expect('bday year select filled (adult)', byv >= 1950 && byv <= 2008);
+  (function () {
+    const leap = byv % 400 === 0 || (byv % 100 !== 0 && byv % 4 === 0);
+    const dims = [0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    expect('bday day/month/year selects form a real birth date', bmv >= 1 && bdv <= dims[bmv]);
+  })();
   expect('hidden MCQ radios answered', (function () { const r = doc.querySelectorAll('[name=mcq1]'); let c = 0; r.forEach(x => { if (x.checked) c++; }); return c >= 1; })());
   expect('hidden agree checkbox checked', doc.querySelector('[name=agree_mcq]').checked === true);
   expect('hidden untouched', val('[name=token]') === 'keepme');
   expect('disabled untouched', val('[name=disabled_field]') === '');
   expect('readonly untouched', val('[name=readonly_field]') === 'ro');
   expect('captcha untouched', val('[name=g-recaptcha-response]') === '');
+  expect('per-site rule skips selector field', val('[name=loyalty_no]') === '');
+  expect('per-site rule skips text-matched field', val('[name=promo_hint]') === '');
   expect('color valid hex', /^#[0-9a-f]{6}$/i.test(val('[name=fav_color]')));
   const q = Number(val('[name=quantity]'));
   expect('quantity in range', q >= 1 && q <= 10);
