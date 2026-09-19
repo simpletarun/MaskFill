@@ -10,6 +10,15 @@ Fill any form with realistic fake data in one click. Free, unlimited, and fully 
 - **Handles hard fields** — React/Vue/Angular inputs, shadow DOM, dropdowns, radio groups, terms checkboxes, captcha skip
 - **67 locales** — English, Hindi + English mix, Spanish, French, German, Japanese, Arabic, and 50+ more
 
+## Extra features
+
+- **Per-site rules** — skip specific fields on specific sites, e.g. `blog.com | [name=verify]`
+- **Check all boxes** — one click checks every checkbox on the page
+- **Fill only empty fields** — your already-typed data is never touched (unless you ask)
+- **Undo across refreshes** — undo still works after you navigate away and come back
+- **Custom password** — choose your own test password value
+- **Consistent persona** — one realistic profile across all fields and forms
+
 
 ## Install
 
@@ -23,9 +32,6 @@ Fill any form with realistic fake data in one click. Free, unlimited, and fully 
 - No network requests, no tracking, no analytics, no remote code
 - Everything runs locally in `chrome.storage.local` — settings are never synced
 - No accounts, no API keys, no paywalls, no limits — free forever
-
-
-Runs offline in Node — no browser needed.
 
 ## License
 
