@@ -10,13 +10,6 @@ Fill any form with realistic fake data in one click. Free, unlimited, and fully 
 - **Handles hard fields** — React/Vue/Angular inputs, shadow DOM, dropdowns, radio groups, terms checkboxes, captcha skip
 - **67 locales** — English, Hindi + English mix, Spanish, French, German, Japanese, Arabic, and 50+ more
 
-## Shortcuts
-
-| Action | Keys |
-| --- | --- |
-| Fill the page | `Ctrl+Shift+F` / `Command+Shift+F` |
-| Fill one field | Right-click the field → **Fill this field** |
-| Undo last fill | `Alt+Shift+U` / `Command+Shift+U` |
 
 ## Install
 
@@ -31,11 +24,6 @@ Fill any form with realistic fake data in one click. Free, unlimited, and fully 
 - Everything runs locally in `chrome.storage.local` — settings are never synced
 - No accounts, no API keys, no paywalls, no limits — free forever
 
-## Test
-
-```bash
-npm test
-```
 
 Runs offline in Node — no browser needed.
 
