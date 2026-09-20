@@ -25,9 +25,16 @@ const MENU_ITEMS = [
 ];
 
 function guardedCreate(props) {
+  // An explicit callback must consume runtime.lastError — otherwise Chrome logs
+  // "Unchecked runtime.lastError: Cannot create item with duplicate id" when the
+  // menu is rebuilt while a previous registration is still live (extension
+  // reload / update). A duplicate id simply means the item already exists with
+  // the same id+title, so it is safe to ignore.
   try {
-    swallow(chrome.contextMenus.create(props));
-    if (chrome.runtime.lastError) void chrome.runtime.lastError;
+    const p = chrome.contextMenus.create(props, () => {
+      void chrome.runtime.lastError;
+    });
+    swallow(p);
   } catch (e) {
     console.error('MaskFill: failed to create context menu "' + props.id + '"', e);
   }
@@ -35,8 +42,10 @@ function guardedCreate(props) {
 
 // Serialize menu rebuilds: onInstalled/onStartup/cold-start can all fire together,
 // and removeAll→createAll is async, so overlapping calls raced on duplicate ids.
-// One cycle recreates every item, so overlapping calls can safely skip.
-var menusPending = false;
+// One cycle recreates every item, so overlapping calls can safely skip. Even when
+// two cycles do interleave (e.g. overlapping worker lifetimes), guardedCreate
+// tolerates the duplicate instead of erroring.
+let menusPending = false;
 
 function ensureMenus() {
   if (!chrome.contextMenus) return;
@@ -44,7 +53,11 @@ function ensureMenus() {
   if (typeof chrome.contextMenus.removeAll === 'function') {
     if (menusPending) return;
     menusPending = true;
-    swallow(chrome.contextMenus.removeAll(() => { menusPending = false; createAll(); }));
+    swallow(chrome.contextMenus.removeAll(() => {
+      void chrome.runtime.lastError;
+      menusPending = false;
+      createAll();
+    }));
   } else {
     createAll();
   }

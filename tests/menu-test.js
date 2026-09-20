@@ -7,6 +7,7 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'background.js'), 'utf8')
 
 const created = [];
 let removeAllCalls = 0;
+let createHadCallback = null;
 const listeners = { installed: [], startup: [], message: null, menuClick: null };
 let scripted = 0;
 
@@ -17,7 +18,18 @@ process.on('unhandledRejection', (reason) => { unhandled.push(String(reason)); }
 
 globalThis.chrome = {
   contextMenus: {
-    create(props) { created.push({ id: props.id, title: props.title, contexts: props.contexts }); },
+    create(props, cb) {
+      createHadCallback = typeof cb === 'function';
+      if (created.some((c) => c.id === props.id)) {
+        // simulate a live tab/worker still holding the same id (real Chrome:
+        // sets runtime.lastError + calls the callback, warns "unchecked" if the
+        // extension forgot to consume lastError)
+        chrome.runtime.lastError = { message: 'Cannot create item with duplicate id ' + props.id };
+      } else {
+        created.push({ id: props.id, title: props.title, contexts: props.contexts });
+      }
+      if (cb) cb();
+    },
     removeAll(cb) { removeAllCalls++; if (cb) cb(); },
     onClicked: { addListener(fn) { listeners.menuClick = fn; } }
   },
@@ -59,6 +71,7 @@ eq('undo registered (all context)', created.some(c => c.id === 'pf-undo' && c.co
 eq('settings registered (action context)', created.some(c => c.id === 'pf-settings' && c.contexts.join() === 'action'));
 eq('fill-form item removed', !created.some(c => c.id === 'pf-fill-form'));
 eq('removeAll ran before create', removeAllCalls >= 1);
+eq('every create passes a callback (consumes runtime.lastError)', createHadCallback === true);
 
 // ENSURE_LIBS must only be honored from our own extension (hostile extensions
 // could otherwise force the heavy libs into arbitrary frames)
@@ -85,6 +98,17 @@ eq('nothing created while a rebuild is in flight', created.length === 0);
 while (pendingRemove.length) pendingRemove.shift()();
 eq('single create cycle after overlap completes', created.length === 4);
 eq('no duplicate ids after overlap', new Set(created.map(c => c.id)).size === created.length);
+
+// rebuild while the same ids are still registered (extension reload / update):
+// duplicate ids must be tolerated silently, not surfaced as "unchecked lastError"
+created.length = 0;
+chrome.contextMenus.removeAll = function (cb) { removeAllCalls++; if (cb) cb(); };
+listeners.installed[0]();
+eq('rebuild with live registrations keeps exactly 4 items', created.length === 4);
+created.length = 0;
+let dupeThrew = false;
+try { listeners.startup[0](); } catch (e) { dupeThrew = true; }
+eq('duplicate-id rebuild never throws', !dupeThrew && created.length === 4);
 
 // every path that can hit a vanished tab must absorb the rejected chrome.* promise,
 // never leaving "Uncaught (in promise) Error: No tab with id" in the worker console.
